@@ -1,8 +1,8 @@
 # Omarchy Updates
 
 A bar widget for [Omarchy](https://omarchy.org) that shows pending **system (pacman)**,
-**AUR** and **mise tool** updates (everything `omarchy-update` installs). Click it to see exactly what will change, start the update, or snooze
-it for however long you like.
+**AUR** and **mise tool** updates (everything `omarchy-update` installs). Click it to
+see exactly what will change, start the update, or snooze it for however long you like.
 
 ![Updates popup](preview.png)
 
@@ -59,8 +59,8 @@ omarchy-shell jessica.updates refresh   # re-check now
 
 ## Dependencies
 
-Nothing beyond a stock Omarchy install: `checkupdates` (pacman-contrib), `yay`, `mise`, `jq`, `flock`,
-and Omarchy's own `omarchy-update` and `omarchy-notification-send`. It never installs
+Nothing beyond a stock Omarchy install: `checkupdates` (pacman-contrib), `yay`, `mise`,
+`jq`, `flock`, and Omarchy's own `omarchy-update` and `omarchy-notification-send`. It never installs
 anything on its own and needs no sudo; the update itself runs in a terminal you can see.
 
 ## Files it writes
