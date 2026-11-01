@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "jessica.updates",
+  "name": "Updates",
+  "version": "1.0.0",
+  "author": "Jessica Crowson",
+  "description": "Pending system/AUR updates with update-now and remind-me-later",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Updates",
+    "description": "Pending system/AUR updates with update-now and remind-me-later",
+    "category": "System",
+    "allowMultiple": false
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/GhostDrift/omarchy-updates"
+}

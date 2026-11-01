@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily check for system/AUR updates (notify only)
+After=graphical-session.target network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/omarchy/plugins/jessica.updates/bin/update-check-notify
+
+[Install]
+WantedBy=graphical-session.target

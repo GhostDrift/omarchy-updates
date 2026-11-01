@@ -1,0 +1,67 @@
+#!/bin/bash
+# Once per day, check for pending system (pacman) and AUR updates and send a
+# notification if there are any. Clicking it runs omarchy-update in a floating
+# terminal, same as the bar's update button.
+#
+# Also run with --force by the jessica.updates bar widget when a
+# "Remind me" snooze expires.
+#
+# Optionally triggered at login (update-check-notify.service) and hourly
+# (update-check-notify.timer) so a session left running past midnight still
+# gets checked. The date stamp is only written after checkupdates succeeds, so
+# a login before the network is up just retries on the next hourly run.
+# Pass --force to ignore today's stamp.
+
+set -uo pipefail
+
+STAMP="$HOME/.local/state/update-check/last-checked"
+today=$(date +%F)
+
+if [[ ${1:-} != --force && -f $STAMP && $(<"$STAMP") == "$today" ]]; then
+  exit 0
+fi
+
+# The jessica.updates bar plugin's "Remind me in…" writes an epoch here. Stay
+# quiet until it passes; the plugin itself re-runs this with --force when it does.
+SNOOZE="$HOME/.local/state/update-check/snooze-until"
+if [[ ${1:-} != --force && -f $SNOOZE ]] && (( $(date +%s) < $(<"$SNOOZE") )); then
+  exit 0
+fi
+
+# Don't nag while an update is already running (same check as omarchy-migrate-notify).
+lock="${XDG_RUNTIME_DIR:-}/omarchy-update.lock"
+if [[ -n ${XDG_RUNTIME_DIR:-} && -f $lock ]] && ! flock -n "$lock" true 2>/dev/null; then
+  exit 0
+fi
+
+# checkupdates: 0 = updates, 2 = none, anything else = failure (e.g. offline).
+repo_updates=$(checkupdates --nocolor 2>/dev/null)
+rc=$?
+if (( rc != 0 && rc != 2 )); then
+  echo "checkupdates failed (rc=$rc); will retry on next run" >&2
+  exit 0
+fi
+
+# yay exits 1 both for "none" and for errors, so just count what it prints.
+aur_updates=$(yay -Qua 2>/dev/null)
+
+count_lines() { sed '/^[[:space:]]*$/d' <<<"$1" | wc -l; }
+repo_count=$(count_lines "$repo_updates")
+aur_count=$(count_lines "$aur_updates")
+total=$(( repo_count + aur_count ))
+
+mkdir -p "$(dirname "$STAMP")"
+echo "$today" >"$STAMP"
+
+(( total > 0 )) || exit 0
+
+parts=()
+(( repo_count > 0 )) && parts+=("$repo_count system")
+(( aur_count > 0 )) && parts+=("$aur_count AUR")
+summary=$(IFS=,; echo "${parts[*]}" | sed 's/,/, /g')
+(( total == 1 )) && noun=update || noun=updates
+
+omarchy-notification-wait || true
+omarchy-notification-send -g 󰚰 "Updates available" \
+  "$total $noun ($summary). Click to update." \
+  --exec omarchy-launch-floating-terminal-with-presentation omarchy-update

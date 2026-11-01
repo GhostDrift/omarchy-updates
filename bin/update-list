@@ -1,0 +1,24 @@
+#!/bin/bash
+# List pending updates, one per line, tab-separated:
+#   repo<TAB>name<TAB>old<TAB>new
+#   aur<TAB>name<TAB>old<TAB>new
+# Used by the jessica.updates bar plugin (Panel.qml). Exits 1
+# when the repo check fails, e.g. offline; exits 0 otherwise, even when
+# nothing is pending. On failure it prints error<TAB>reason (to stdout).
+
+set -uo pipefail
+
+repo=$(checkupdates --nocolor 2>/dev/null)
+rc=$?
+if (( rc != 0 && rc != 2 )); then
+  printf 'error\tCouldn'"'"'t reach the package mirrors\n'
+  exit 1
+fi
+
+# yay exits 1 both for "none" and for errors, so just use what it prints.
+aur=$(yay -Qua 2>/dev/null)
+
+fmt() { awk -v src="$1" 'NF >= 4 { printf "%s\t%s\t%s\t%s\n", src, $1, $2, $4 }'; }
+[[ -n $repo ]] && fmt repo <<<"$repo"
+[[ -n $aur ]] && fmt aur <<<"$aur"
+exit 0
