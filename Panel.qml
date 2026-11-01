@@ -5,7 +5,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
 
-// Bar icon for pending pacman + AUR updates. Left click opens a popup that
+// Bar icon for pending pacman, AUR and mise tool updates. Left click opens a popup that
 // lists them, with "Update now" (omarchy-update in a floating terminal) and
 // "Remind me in N min/hours/days". Right click toggles the count.
 //
@@ -31,6 +31,7 @@ Panel {
 
   property var repoUpdates: []
   property var aurUpdates: []
+  property var toolUpdates: []      // mise tools (omarchy-update's `mise up` step)
   property bool checking: false
   property bool checkedOnce: false
   property string error: ""
@@ -44,7 +45,7 @@ Panel {
   property bool sawUpdateLock: false
   property real watchStarted: 0
 
-  readonly property int total: repoUpdates.length + aurUpdates.length
+  readonly property int total: repoUpdates.length + aurUpdates.length + toolUpdates.length
   readonly property bool snoozed: snoozeUntil > now
   readonly property bool showCount: setting("showCount", true) === true
   readonly property int snoozeAmount: Math.max(1, Number(setting("snoozeAmount", 2)) || 2)
@@ -60,7 +61,7 @@ Panel {
   }
 
   function parseList(raw) {
-    var repo = [], aur = [], err = ""
+    var repo = [], aur = [], tools = [], err = ""
     var lines = String(raw || "").split("\n")
     for (var i = 0; i < lines.length; i++) {
       var f = lines[i].split("\t")
@@ -69,6 +70,7 @@ Panel {
       var item = { name: f[1], from: f[2], to: f[3], core: /^omarchy(-dev)?$/.test(f[1]) }
       if (f[0] === "aur") aur.push(item)
       else if (f[0] === "repo") repo.push(item)
+      else if (f[0] === "tool") tools.push(item)
     }
     repo.sort(function(a, b) { return (b.core ? 1 : 0) - (a.core ? 1 : 0) })
     root.checking = false
@@ -78,6 +80,7 @@ Panel {
     if (err !== "") return
     root.repoUpdates = repo
     root.aurUpdates = aur
+    root.toolUpdates = tools
     root.lastChecked = Date.now()
   }
 
@@ -154,6 +157,7 @@ Panel {
     var parts = []
     if (repoUpdates.length) parts.push(repoUpdates.length + " system")
     if (aurUpdates.length) parts.push(aurUpdates.length + " AUR")
+    if (toolUpdates.length) parts.push(toolUpdates.length + (toolUpdates.length === 1 ? " tool" : " tools"))
     var s = total + (total === 1 ? " update" : " updates") + " (" + parts.join(", ") + ")"
     if (snoozed) s += "\nReminder at " + timeLabel(snoozeUntil)
     return s
@@ -363,7 +367,8 @@ Panel {
             Repeater {
               model: [
                 { title: "SYSTEM", items: root.repoUpdates },
-                { title: "AUR", items: root.aurUpdates }
+                { title: "AUR", items: root.aurUpdates },
+                { title: "TOOLS (MISE)", items: root.toolUpdates }
               ]
 
               Column {

@@ -1,12 +1,20 @@
 #!/bin/bash
 # List pending updates, one per line, tab-separated:
-#   repo<TAB>name<TAB>old<TAB>new
-#   aur<TAB>name<TAB>old<TAB>new
-# Used by the jessica.updates bar plugin (Panel.qml). Exits 1
-# when the repo check fails, e.g. offline; exits 0 otherwise, even when
-# nothing is pending. On failure it prints error<TAB>reason (to stdout).
+#   repo<TAB>name<TAB>old<TAB>new    pacman repos (pacman -Syu step)
+#   aur<TAB>name<TAB>old<TAB>new     AUR (yay -Sua step)
+#   tool<TAB>name<TAB>old<TAB>new    mise tools (mise up step)
+# i.e. everything omarchy-update installs. Used by the jessica.updates bar
+# widget (Panel.qml) and bin/update-check-notify. Exits 1 when the repo check
+# fails, e.g. offline, printing error<TAB>reason (to stdout); exits 0
+# otherwise, even when nothing is pending.
 
 set -uo pipefail
+
+# checkupdates syncs into one shared temp db, so concurrent runs (the widget's
+# refresh and the notifier fire together when a snooze expires) make one of
+# them fail. Take turns.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/update-list.lock"
+flock -w 120 9 || { printf 'error\tAnother update check is still running\n'; exit 1; }
 
 repo=$(checkupdates --nocolor 2>/dev/null)
 rc=$?
@@ -18,7 +26,16 @@ fi
 # yay exits 1 both for "none" and for errors, so just use what it prints.
 aur=$(yay -Qua 2>/dev/null)
 
+# omarchy-update runs `mise up` from its terminal's directory ($HOME), so
+# check from there too: global config only, not whatever project we're in.
+tools=""
+if command -v mise >/dev/null; then
+  tools=$(cd "$HOME" && timeout 60 mise outdated --json 2>/dev/null |
+    jq -r 'to_entries[] | [.key, (.value.current // "?"), (.value.latest // "?")] | @tsv' 2>/dev/null)
+fi
+
 fmt() { awk -v src="$1" 'NF >= 4 { printf "%s\t%s\t%s\t%s\n", src, $1, $2, $4 }'; }
 [[ -n $repo ]] && fmt repo <<<"$repo"
 [[ -n $aur ]] && fmt aur <<<"$aur"
+[[ -n $tools ]] && sed 's/^/tool\t/' <<<"$tools"
 exit 0

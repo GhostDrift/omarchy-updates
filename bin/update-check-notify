@@ -1,7 +1,8 @@
 #!/bin/bash
-# Once per day, check for pending system (pacman) and AUR updates and send a
-# notification if there are any. Clicking it runs omarchy-update in a floating
-# terminal, same as the bar's update button.
+# Once per day, check for pending system (pacman), AUR and mise tool updates
+# (everything omarchy-update installs) and send a notification if there are
+# any. Clicking it runs omarchy-update in a floating terminal, same as the
+# bar's update button.
 #
 # Also run with --force by the jessica.updates bar widget when a
 # "Remind me" snooze expires.
@@ -34,21 +35,19 @@ if [[ -n ${XDG_RUNTIME_DIR:-} && -f $lock ]] && ! flock -n "$lock" true 2>/dev/n
   exit 0
 fi
 
-# checkupdates: 0 = updates, 2 = none, anything else = failure (e.g. offline).
-repo_updates=$(checkupdates --nocolor 2>/dev/null)
-rc=$?
-if (( rc != 0 && rc != 2 )); then
-  echo "checkupdates failed (rc=$rc); will retry on next run" >&2
+# Same listing the bar widget shows (repo, AUR and mise tools). Resolve the
+# symlink so this also works when called via ~/.local/bin.
+list=$("$(dirname "$(readlink -f "$0")")/update-list")
+if [[ $list == error$'\t'* ]]; then
+  echo "update check failed (${list#error$'\t'}); will retry on next run" >&2
   exit 0
 fi
 
-# yay exits 1 both for "none" and for errors, so just count what it prints.
-aur_updates=$(yay -Qua 2>/dev/null)
-
-count_lines() { sed '/^[[:space:]]*$/d' <<<"$1" | wc -l; }
-repo_count=$(count_lines "$repo_updates")
-aur_count=$(count_lines "$aur_updates")
-total=$(( repo_count + aur_count ))
+count_kind() { grep -c "^$1"$'\t' <<<"$list"; }
+repo_count=$(count_kind repo)
+aur_count=$(count_kind aur)
+tool_count=$(count_kind tool)
+total=$(( repo_count + aur_count + tool_count ))
 
 mkdir -p "$(dirname "$STAMP")"
 echo "$today" >"$STAMP"
@@ -58,6 +57,8 @@ echo "$today" >"$STAMP"
 parts=()
 (( repo_count > 0 )) && parts+=("$repo_count system")
 (( aur_count > 0 )) && parts+=("$aur_count AUR")
+(( tool_count == 1 )) && parts+=("1 tool")
+(( tool_count > 1 )) && parts+=("$tool_count tools")
 summary=$(IFS=,; echo "${parts[*]}" | sed 's/,/, /g')
 (( total == 1 )) && noun=update || noun=updates
 

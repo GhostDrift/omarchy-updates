@@ -1,7 +1,7 @@
 # Omarchy Updates
 
-A bar widget for [Omarchy](https://omarchy.org) that shows pending **system (pacman)** and
-**AUR** updates. Click it to see exactly what will change, start the update, or snooze
+A bar widget for [Omarchy](https://omarchy.org) that shows pending **system (pacman)**,
+**AUR** and **mise tool** updates (everything `omarchy-update` installs). Click it to see exactly what will change, start the update, or snooze
 it for however long you like.
 
 ![Updates popup](preview.png)
@@ -9,7 +9,8 @@ it for however long you like.
 - **Bar icon:** a refresh icon with the pending count. It's hidden when you're up to date
   and dimmed while a reminder is snoozed. Left click opens the popup; right click shows or
   hides the count.
-- **Popup:** every pending package with `old → new` versions, grouped into System and AUR.
+- **Popup:** every pending package with `old → new` versions, grouped into System, AUR and
+  Tools (mise, i.e. CLIs installed through `mise`, checked against your global config).
   `omarchy` itself is pinned to the top in bold when it has an update. The corner button
   (or `r`) checks again.
 - **Update now:** runs `omarchy-update` in the standard floating terminal (the same thing
@@ -58,7 +59,7 @@ omarchy-shell jessica.updates refresh   # re-check now
 
 ## Dependencies
 
-Nothing beyond a stock Omarchy install: `checkupdates` (pacman-contrib), `yay`, `flock`,
+Nothing beyond a stock Omarchy install: `checkupdates` (pacman-contrib), `yay`, `mise`, `jq`, `flock`,
 and Omarchy's own `omarchy-update` and `omarchy-notification-send`. It never installs
 anything on its own and needs no sudo; the update itself runs in a terminal you can see.
 

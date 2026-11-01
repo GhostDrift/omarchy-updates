@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "id": "jessica.updates",
   "name": "Updates",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Jessica Crowson",
-  "description": "Pending system/AUR updates with update-now and remind-me-later",
+  "description": "Pending system/AUR/mise updates with update-now and remind-me-later",
   "kinds": [
     "bar-widget"
   ],
@@ -13,7 +13,7 @@
   },
   "barWidget": {
     "displayName": "Updates",
-    "description": "Pending system/AUR updates with update-now and remind-me-later",
+    "description": "Pending system/AUR/mise updates with update-now and remind-me-later",
     "category": "System",
     "allowMultiple": false
   },
