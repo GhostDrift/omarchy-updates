@@ -6,6 +6,8 @@ see exactly what will change, start the update, or snooze it for however long yo
 
 ![Updates popup](preview.png)
 
+*Example data: the `claude` tool update was made up to show the Tools section.*
+
 - **Bar icon:** a refresh icon with the pending count. It's hidden when you're up to date
   and dimmed while a reminder is snoozed. Left click opens the popup; right click shows or
   hides the count.
