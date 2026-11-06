@@ -50,7 +50,8 @@ Panel {
   readonly property bool showCount: setting("showCount", true) === true
   readonly property int snoozeAmount: Math.max(1, Number(setting("snoozeAmount", 2)) || 2)
   readonly property string snoozeUnit: String(setting("snoozeUnit", "hours"))
-  readonly property real openPanelIndicatorWidth: showCount && !button.vertical ? button.glyphPaintedWidth : 0
+  readonly property bool countShown: showCount && !button.vertical
+  readonly property real openPanelIndicatorWidth: countShown ? button.width - (Style.bar.iconSlot - Style.bar.iconCanvas) : 0
 
   // ---------- data ----------
 
@@ -241,17 +242,25 @@ Panel {
 
   // ---------- bar button ----------
 
+  TextMetrics {
+    id: countMetrics
+    font.family: button.fontFamily
+    font.pixelSize: button.fontSize
+    text: String(root.total)
+  }
+
   BarIconButton {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.showCount && !vertical ? " " + root.total : ""
-    // Fit the slot to the painted "icon + count" with the same side padding a
-    // plain icon gets (iconSlot - iconCanvas), so it spaces like its neighbors.
-    slotSize: root.showCount && !vertical
-      ? Math.max(Style.bar.iconSlot, Math.ceil(glyphPaintedWidth) + Style.bar.iconSlot - Style.bar.iconCanvas)
+    // Icon and count stay separate: BarIconButton scales `text` to fit the icon
+    // box, so a combined "icon + count" string shrinks as the count gets wider.
+    text: "\uf021"
+    labelText: root.countShown ? String(root.total) : ""
+    // The icon's usual side padding, plus the room the label takes.
+    slotSize: root.countShown
+      ? Style.bar.iconSlot + Math.ceil(countMetrics.advanceWidth) + Style.space(4)
       : Style.bar.iconSlot
-    fontSize: Style.font.caption
     opacity: root.snoozed && !root.opened ? 0.45 : 1
     tooltipText: root.opened ? "" : root.tooltip
     onPressed: function(b) {
